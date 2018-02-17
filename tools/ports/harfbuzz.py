@@ -15,18 +15,23 @@ def get(ports, settings, shared):
 
       shutil.rmtree(dest_path, ignore_errors=True)
 
-      shared.Building.configure(['cmake', '-H' + source_path, '-B' + dest_path, '-DCMAKE_BUILD_TYPE=Release'])
-      subprocess.check_call(['make'], cwd=dest_path)
+      freetype_dir = os.path.join(ports.get_build_dir(), 'freetype')
+      freetype_include = os.path.join(freetype_dir, 'include')
+      freetype_include_dirs = freetype_include + ';' + os.path.join(freetype_include, 'config')
+
+      shared.Building.configure(['cmake', '-H' + source_path, '-B' + dest_path,
+        '-DHB_HAVE_FREETYPE=ON', '-DFREETYPE_LIBRARY=' + freetype_dir,
+        '-DFREETYPE_INCLUDE_DIRS=' + freetype_include_dirs,
+        '-DCMAKE_BUILD_TYPE=Release'])
+      shared.Building.make(['make', '-C' + dest_path])
       return os.path.join(dest_path, 'libharfbuzz.a')
     return [shared.Cache.get('harfbuzz', create, what='port')]
   else:
     return []
 
-
 def process_dependencies(settings):
-  #TODO: Enable hb-ft dependency and add -DHB_HAVE_FREETYPE=ON to cmake configuration
-  #if settings.USE_HARFBUZZ == 1:
-  #  settings.USE_FREETYPE = 1
+  if settings.USE_HARFBUZZ == 1:
+    settings.USE_FREETYPE = 1
   pass
 
 def process_args(ports, args, settings, shared):
